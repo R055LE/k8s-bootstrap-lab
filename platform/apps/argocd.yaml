@@ -1,0 +1,41 @@
+# ArgoCD self-management Application.
+#
+# ArgoCD is first installed imperatively by bootstrap.sh, then this Application
+# takes over — keeping ArgoCD's config in sync with values in platform/argocd/.
+# This is the standard "ArgoCD managing itself" pattern.
+#
+# prune: false — avoids ArgoCD accidentally deleting its own components during
+# a sync if the diff calculation is off. Upgrades are still applied.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  sources:
+    # Upstream ArgoCD Helm chart
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      # Pin version — verify latest: helm search repo argo/argo-cd --versions | head -5
+      targetRevision: 7.7.5
+      helm:
+        valueFiles:
+          - $values/platform/argocd/values.yaml
+    # Values file from this repo (the $values ref)
+    - repoURL: ${REPO_URL}
+      targetRevision: ${REPO_BRANCH}
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

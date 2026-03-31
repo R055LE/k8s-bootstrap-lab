@@ -1,0 +1,28 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.lock.hcl
+
+# Secrets and local overrides — never commit real values
+config/aws.env
+config/local.secrets.env
+*.secret
+*.pem
+*.key
+kubeconfig
+kubeconfig-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Helm
+charts/

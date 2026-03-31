@@ -1,0 +1,39 @@
+# Gitea self-management Application.
+#
+# Gitea is first installed imperatively by bootstrap.sh, then this Application
+# takes over — keeping Gitea's config in sync with platform/gitea/values.yaml.
+#
+# Note: the admin credentials secret (gitea-admin-secret) is created by
+# bootstrap.sh and is NOT managed by ArgoCD to prevent it being pruned.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitea
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  sources:
+    # Upstream Gitea Helm chart
+    - repoURL: https://dl.gitea.com/charts/
+      chart: gitea
+      # Pin version — verify latest: helm search repo gitea-charts/gitea --versions | head -5
+      targetRevision: 10.6.0
+      helm:
+        valueFiles:
+          - $values/platform/gitea/values.yaml
+    # Values file from this repo (the $values ref)
+    - repoURL: ${REPO_URL}
+      targetRevision: ${REPO_BRANCH}
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitea
+  syncPolicy:
+    automated:
+      prune: false   # Don't prune Gitea resources — prevents data loss
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: '3'
+
+# Load environment config. Override TARGET on the CLI: task bootstrap TARGET=aws
+dotenv:
+  - 'config/{{.TARGET}}.env'
+
+vars:
+  TARGET: '{{.TARGET | default "local"}}'
+
+tasks:
+  # ── Top-level entry points ──────────────────────────────────────────────────
+
+  bootstrap:
+    desc: "Bootstrap the full platform. Usage: task bootstrap [TARGET=local|aws]"
+    cmds:
+      - task: bootstrap:{{.TARGET}}
+
+  destroy:
+    desc: "Tear down the cluster. Usage: task destroy [TARGET=local|aws]"
+    cmds:
+      - task: destroy:{{.TARGET}}
+
+  status:
+    desc: "Show health of all platform components"
+    cmds:
+      - bash scripts/status.sh
+
+  argocd:
+    desc: "Open ArgoCD UI (port-forward to localhost:8080)"
+    cmds:
+      - bash scripts/open-argocd.sh
+
+  dashboard:
+    desc: "Open Grafana dashboard (port-forward to localhost:3000)"
+    cmds:
+      - bash scripts/open-dashboard.sh
+
+  # ── Local (Kind) ────────────────────────────────────────────────────────────
+
+  bootstrap:local:
+    internal: true
+    desc: Bootstrap local Kind cluster with ArgoCD and platform apps
+    cmds:
+      - bash scripts/prerequisites.sh
+      - bash bootstrap/bootstrap.sh
+
+  destroy:local:
+    internal: true
+    desc: Destroy the local Kind cluster
+    cmds:
+      - bash scripts/teardown-local.sh
+
+  # ── AWS (EKS) ───────────────────────────────────────────────────────────────
+
+  bootstrap:aws:
+    internal: true
+    desc: Provision EKS cluster via Terraform and bootstrap platform
+    cmds:
+      - bash scripts/prerequisites.sh
+      - bash scripts/setup-aws.sh
+
+  destroy:aws:
+    internal: true
+    desc: Tear down AWS resources via Terraform
+    cmds:
+      - bash scripts/teardown-aws.sh
+
+  # ── Utilities ───────────────────────────────────────────────────────────────
+
+  prerequisites:
+    desc: "Check all required tools are installed"
+    cmds:
+      - bash scripts/prerequisites.sh

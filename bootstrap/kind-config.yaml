@@ -1,0 +1,27 @@
+# Kind cluster configuration for zero-to-cluster
+# 1 control-plane node (also runs ingress-nginx) + 2 workers
+#
+# extraPortMappings on the control-plane node map host ports 80/443 directly
+# into the Kind container, so ingress-nginx (running on this node with hostPort
+# enabled) is reachable at http://localhost and https://localhost.
+---
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    # Mark this node as ingress-ready so the ingress-nginx NodeSelector matches
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+  - role: worker
+  - role: worker

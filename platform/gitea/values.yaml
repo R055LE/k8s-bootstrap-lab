@@ -1,0 +1,67 @@
+# Gitea Helm values — local (Kind) target
+#
+# Admin credentials are NOT here — they are injected at bootstrap time via a
+# Kubernetes secret (gitea-admin-secret) to avoid exposing passwords in Helm
+# history. See bootstrap/bootstrap.sh step 4.
+#
+# Uses SQLite — no need for PostgreSQL on a local dev cluster.
+# Ingress at gitea.localhost (add to /etc/hosts after bootstrap).
+
+gitea:
+  admin:
+    # Credentials sourced from k8s secret created by bootstrap.sh
+    existingSecret: gitea-admin-secret
+  config:
+    database:
+      DB_TYPE: sqlite3
+    server:
+      ROOT_URL: http://gitea.localhost
+      HTTP_PORT: 3000
+    service:
+      # Disable self-registration — only the admin account is used
+      DISABLE_REGISTRATION: "true"
+    repository:
+      DEFAULT_BRANCH: main
+
+service:
+  http:
+    type: ClusterIP
+    port: 3000
+  ssh:
+    # SSH disabled — HTTP is sufficient for local dev
+    type: ClusterIP
+    port: 22
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: gitea.localhost
+      paths:
+        - path: /
+          pathType: Prefix
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Disable bundled PostgreSQL and Redis — SQLite handles everything for local dev
+postgresql:
+  enabled: false
+
+postgresql-ha:
+  enabled: false
+
+redis-cluster:
+  enabled: false
+
+redis:
+  enabled: false

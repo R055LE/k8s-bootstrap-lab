@@ -1,0 +1,30 @@
+# Root ArgoCD Application — the app-of-apps.
+#
+# This file is applied by bootstrap.sh via envsubst to inject REPO_URL and
+# REPO_BRANCH at bootstrap time. Do not hardcode those values here.
+#
+# Once applied, ArgoCD discovers all Application manifests under platform/apps/
+# and syncs them automatically. Adding a new platform component = adding a file
+# to platform/apps/ and pushing to ${REPO_BRANCH}.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+  # Cascade deletion: removing this Application also removes all child apps
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  source:
+    repoURL: ${REPO_URL}
+    targetRevision: ${REPO_BRANCH}
+    path: platform/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

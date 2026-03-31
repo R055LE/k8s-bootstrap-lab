@@ -1,0 +1,62 @@
+# ArgoCD Helm values — local (Kind) target
+#
+# ArgoCD server runs in insecure mode (no TLS) because TLS is terminated at the
+# nginx ingress layer. This is standard practice when using an ingress controller.
+
+configs:
+  params:
+    # Disable TLS on the ArgoCD server — TLS terminates at ingress-nginx
+    server.insecure: "true"
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: argocd.localhost
+    # No TLS — accessing via plain HTTP on localhost for local dev
+    tls: false
+
+  # Resource limits appropriate for a local Kind cluster
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+applicationSet:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+notifications:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+redis:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
