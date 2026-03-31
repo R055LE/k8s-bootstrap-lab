@@ -84,6 +84,29 @@ if kubectl get pods -n gitea -l "app.kubernetes.io/name=gitea" --no-headers 2>/d
   fi
 fi
 
+# ── Monitoring ────────────────────────────────────────────────────────────────
+
+echo ""
+echo "→ Monitoring"
+if kubectl get namespace monitoring &>/dev/null; then
+  check_pods_ready "app.kubernetes.io/name=prometheus" "monitoring" "prometheus"
+  check_pods_ready "app.kubernetes.io/name=grafana" "monitoring" "grafana"
+  check_pods_ready "app.kubernetes.io/name=alertmanager" "monitoring" "alertmanager"
+else
+  echo "  (monitoring namespace not found — Phase 2 not yet deployed)"
+fi
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+echo ""
+echo "→ Logging"
+if kubectl get namespace logging &>/dev/null; then
+  check_pods_ready "app.kubernetes.io/name=loki" "logging" "loki"
+  check_pods_ready "app.kubernetes.io/name=promtail" "logging" "promtail"
+else
+  echo "  (logging namespace not found — Phase 2 not yet deployed)"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 echo ""

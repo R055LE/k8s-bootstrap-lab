@@ -1,0 +1,16 @@
+# Promtail Helm values — local (Kind) target
+#
+# Runs as a DaemonSet. Tails /var/log/pods on each node and ships to Loki.
+# The Loki URL uses the in-cluster service name — no ingress needed.
+
+config:
+  clients:
+    - url: http://loki.logging.svc.cluster.local:3100/loki/api/v1/push
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

@@ -1,0 +1,35 @@
+# kube-prometheus-stack Application.
+# Deploys Prometheus, Grafana, and Alertmanager to the monitoring namespace.
+# Grafana is accessible at http://grafana.localhost via ingress-nginx.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      # Pin version — verify latest: helm search repo prometheus-community/kube-prometheus-stack --versions | head -5
+      targetRevision: 65.3.1
+      helm:
+        releaseName: kube-prometheus-stack
+        valueFiles:
+          - $values/platform/monitoring/values.yaml
+    - repoURL: ${REPO_URL}
+      targetRevision: ${REPO_BRANCH}
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

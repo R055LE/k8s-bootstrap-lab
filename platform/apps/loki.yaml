@@ -1,0 +1,34 @@
+# Loki Application — log aggregation backend.
+# Deployed in SingleBinary mode (single replica, filesystem storage) — suitable
+# for local dev. Upgrade to SimpleScalable + object storage for production.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: loki
+      # Pin version — verify latest: helm search repo grafana/loki --versions | head -5
+      targetRevision: 6.16.0
+      helm:
+        releaseName: loki
+        valueFiles:
+          - $values/platform/loki/values.yaml
+    - repoURL: ${REPO_URL}
+      targetRevision: ${REPO_BRANCH}
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: logging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
