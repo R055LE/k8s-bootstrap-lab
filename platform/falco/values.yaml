@@ -5,12 +5,21 @@
 
 falco:
   driver:
-    # ebpf: uses a pre-compiled probe downloaded at startup.
-    # modern_ebpf fails on WSL2 (microsoft-standard kernel) due to BTF constraints
-    # in the CO-RE eBPF approach. The legacy ebpf probe uses a different attachment
-    # mechanism and works on WSL2 when the probe is available for the kernel version.
-    # On real Linux (EKS), modern_ebpf works fine.
-    kind: ebpf
+    # KNOWN LIMITATION — WSL2 / Kind:
+    # Falco requires kernel-level access to attach eBPF probes. On WSL2, the
+    # microsoft-standard kernel has no pre-built Falco probe, and compilation
+    # requires kernel headers + debugfs that are unavailable inside Kind containers.
+    #
+    # Result: the Falco DaemonSet will fail to start on WSL2/Kind.
+    # This is expected — the configuration is correct for EKS (Phase 4) where
+    # Amazon Linux 2 nodes have pre-built probes and full kernel access.
+    #
+    # What DOES work locally:
+    #   - Falcosidekick (running) — Loki destination is wired and ready
+    #   - Grafana Falco dashboard — deployed and will populate on EKS
+    #
+    # To test Falco locally without WSL2, use a Linux VM or Docker Desktop on Linux.
+    kind: modern_ebpf
 
   # Collect container metadata for richer alert context
   collectors:
