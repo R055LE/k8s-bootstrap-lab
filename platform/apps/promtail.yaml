@@ -1,7 +1,3 @@
-# Promtail Application — log shipper.
-# Runs as a DaemonSet on every node, tails container logs, and ships them to
-# Loki at http://loki.logging.svc.cluster.local:3100.
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -11,18 +7,12 @@ metadata:
     - resources-finalizer.argocd.io
 spec:
   project: default
-  sources:
-    - repoURL: https://grafana.github.io/helm-charts
-      chart: promtail
-      # Pin version — verify latest: helm search repo grafana/promtail --versions | head -5
-      targetRevision: 6.16.6
-      helm:
-        releaseName: promtail
-        valueFiles:
-          - $values/platform/promtail/values.yaml
-    - repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
+    targetRevision: main
+    path: platform/promtail
+    helm:
+      releaseName: promtail
   destination:
     server: https://kubernetes.default.svc
     namespace: logging

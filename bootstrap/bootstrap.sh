@@ -171,15 +171,9 @@ if [[ ! -d ".git" ]]; then
   git checkout -b main
 fi
 
-# Substitute REPO_URL/REPO_BRANCH into Application manifests before committing.
-# ArgoCD reads these files directly from git — they must have real values, not
-# placeholders. set -a ensures the sourced vars are exported for envsubst.
-echo "→ Injecting REPO_URL into Application manifests..."
-for f in "${REPO_ROOT}/platform/apps/"*.yaml "${REPO_ROOT}/platform/app-of-apps.yaml"; do
-  envsubst '${REPO_URL} ${REPO_BRANCH}' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-done
-
 # Stage everything (excluding gitignored files)
+# Application manifests reference the in-cluster Gitea URL directly — no
+# placeholder substitution needed. All values are committed as-is.
 git add .
 if git diff --cached --quiet; then
   echo "  Nothing new to commit — skipping."
@@ -235,18 +229,13 @@ echo "✓ ArgoCD ready."
 
 echo ""
 echo "═══ Step 8/8: Apply app-of-apps ══════════════════════════════════════════"
-echo "→ Applying Applications (repo: ${REPO_URL}, branch: ${REPO_BRANCH})..."
+echo "→ Applying root Application..."
 
-export REPO_URL REPO_BRANCH
+# App manifests reference Gitea directly — apply as-is, no substitution needed
+kubectl apply -f "${REPO_ROOT}/platform/app-of-apps.yaml"
 
-# Root app-of-apps
-envsubst '${REPO_URL} ${REPO_BRANCH}' \
-  < "${REPO_ROOT}/platform/app-of-apps.yaml" \
-  | kubectl apply -f -
-
-# Child Application manifests (multi-source $values refs need REPO_URL injected)
 for app_file in "${REPO_ROOT}/platform/apps/"*.yaml; do
-  envsubst '${REPO_URL} ${REPO_BRANCH}' < "${app_file}" | kubectl apply -f -
+  kubectl apply -f "${app_file}"
 done
 
 echo "✓ Applications applied. ArgoCD is now syncing the platform."

@@ -1,12 +1,3 @@
-# ArgoCD self-management Application.
-#
-# ArgoCD is first installed imperatively by bootstrap.sh, then this Application
-# takes over — keeping ArgoCD's config in sync with values in platform/argocd/.
-# This is the standard "ArgoCD managing itself" pattern.
-#
-# prune: false — avoids ArgoCD accidentally deleting its own components during
-# a sync if the diff calculation is off. Upgrades are still applied.
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -16,19 +7,12 @@ metadata:
     - resources-finalizer.argocd.io
 spec:
   project: default
-  sources:
-    # Upstream ArgoCD Helm chart
-    - repoURL: https://argoproj.github.io/argo-helm
-      chart: argo-cd
-      # Pin version — verify latest: helm search repo argo/argo-cd --versions | head -5
-      targetRevision: 7.7.5
-      helm:
-        valueFiles:
-          - $values/platform/argocd/values.yaml
-    # Values file from this repo (the $values ref)
-    - repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
+    targetRevision: main
+    path: platform/argocd
+    helm:
+      releaseName: argocd
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

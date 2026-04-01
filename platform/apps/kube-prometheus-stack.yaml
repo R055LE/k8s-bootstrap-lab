@@ -1,7 +1,3 @@
-# kube-prometheus-stack Application.
-# Deploys Prometheus, Grafana, and Alertmanager to the monitoring namespace.
-# Grafana is accessible at http://grafana.localhost via ingress-nginx.
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -11,18 +7,12 @@ metadata:
     - resources-finalizer.argocd.io
 spec:
   project: default
-  sources:
-    - repoURL: https://prometheus-community.github.io/helm-charts
-      chart: kube-prometheus-stack
-      # Pin version — verify latest: helm search repo prometheus-community/kube-prometheus-stack --versions | head -5
-      targetRevision: 65.3.1
-      helm:
-        releaseName: kube-prometheus-stack
-        valueFiles:
-          - $values/platform/monitoring/values.yaml
-    - repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
+    targetRevision: main
+    path: platform/monitoring
+    helm:
+      releaseName: kube-prometheus-stack
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

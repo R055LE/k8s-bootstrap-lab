@@ -1,10 +1,3 @@
-# ingress-nginx Application.
-#
-# Deployed to the ingress-nginx namespace. The controller runs on the node
-# labelled ingress-ready=true (the Kind control-plane node), using hostPort so
-# traffic on localhost:80/443 reaches the ingress controller directly via the
-# Kind extraPortMappings configured in bootstrap/kind-config.yaml.
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -14,19 +7,12 @@ metadata:
     - resources-finalizer.argocd.io
 spec:
   project: default
-  sources:
-    # Upstream ingress-nginx Helm chart
-    - repoURL: https://kubernetes.github.io/ingress-nginx
-      chart: ingress-nginx
-      # Pin version — verify latest: helm search repo ingress-nginx/ingress-nginx --versions | head -5
-      targetRevision: 4.11.3
-      helm:
-        valueFiles:
-          - $values/platform/ingress-nginx/values.yaml
-    # Values file from this repo (the $values ref)
-    - repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
+    targetRevision: main
+    path: platform/ingress-nginx
+    helm:
+      releaseName: ingress-nginx
   destination:
     server: https://kubernetes.default.svc
     namespace: ingress-nginx

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: promtail
+description: Umbrella chart — wraps grafana/promtail
+type: application
+version: 1.0.0
+dependencies:
+  - name: promtail
+    version: 6.16.6
+    repository: https://grafana.github.io/helm-charts

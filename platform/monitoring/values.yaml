@@ -1,69 +1,78 @@
-# kube-prometheus-stack Helm values — local (Kind) target
-#
-# Includes: Prometheus, Grafana, Alertmanager, node-exporter, kube-state-metrics.
-# Grafana is accessible at http://grafana.localhost via ingress-nginx.
-# Loki is pre-wired as a datasource so logs are queryable alongside metrics.
+# kube-prometheus-stack umbrella chart values.
+# All keys are scoped under kube-prometheus-stack: (the dependency name).
 
-grafana:
-  # Local dev password — do not use in any internet-facing deployment
-  adminPassword: "zero-to-cluster-local"
+kube-prometheus-stack:
+  grafana:
+    # Local dev password — do not use in any internet-facing deployment
+    adminPassword: "zero-to-cluster-local"
 
-  ingress:
-    enabled: true
-    ingressClassName: nginx
-    hosts:
-      - grafana.localhost
-
-  # No persistence for local dev — dashboards survive pod restarts via ConfigMaps
-  persistence:
-    enabled: false
-
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-
-  # Pre-configure Loki datasource so logs are queryable immediately
-  additionalDataSources:
-    - name: Loki
-      type: loki
-      url: http://loki.logging.svc.cluster.local:3100
-      access: proxy
-      isDefault: false
-
-  # Load custom dashboards from ConfigMaps labelled grafana_dashboard=1
-  sidecar:
-    dashboards:
+    ingress:
       enabled: true
-      label: grafana_dashboard
-      labelValue: "1"
-      searchNamespace: ALL
+      ingressClassName: nginx
+      hosts:
+        - grafana.localhost
 
-prometheus:
-  prometheusSpec:
-    # Short retention for local dev — keeps disk usage low
-    retention: 24h
+    persistence:
+      enabled: false
 
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
+        cpu: 50m
+        memory: 128Mi
       limits:
-        cpu: 1000m
-        memory: 1Gi
+        cpu: 500m
+        memory: 256Mi
 
-    # No persistent storage for local dev
-    storageSpec: {}
+    # Pre-configure Loki datasource
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://loki.logging.svc.cluster.local:3100
+        access: proxy
+        isDefault: false
 
-    # Scrape all ServiceMonitors and PodMonitors cluster-wide
-    serviceMonitorSelectorNilUsesHelmValues: false
-    podMonitorSelectorNilUsesHelmValues: false
+    # Load custom dashboards from ConfigMaps labelled grafana_dashboard=1
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
 
-alertmanager:
-  alertmanagerSpec:
+  prometheus:
+    prometheusSpec:
+      retention: 24h
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+      storageSpec: {}
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+
+  alertmanager:
+    alertmanagerSpec:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+
+  prometheus-node-exporter:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+  kube-state-metrics:
     resources:
       requests:
         cpu: 10m
@@ -71,21 +80,3 @@ alertmanager:
       limits:
         cpu: 100m
         memory: 128Mi
-
-prometheus-node-exporter:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 32Mi
-    limits:
-      cpu: 100m
-      memory: 64Mi
-
-kube-state-metrics:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 100m
-      memory: 128Mi

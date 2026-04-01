@@ -1,16 +1,15 @@
-# Promtail Helm values — local (Kind) target
-#
-# Runs as a DaemonSet. Tails /var/log/pods on each node and ships to Loki.
-# The Loki URL uses the in-cluster service name — no ingress needed.
+# Promtail umbrella chart values.
+# All keys are scoped under promtail: (the dependency name in Chart.yaml).
 
-config:
-  clients:
-    - url: http://loki.logging.svc.cluster.local:3100/loki/api/v1/push
+promtail:
+  config:
+    clients:
+      - url: http://loki.logging.svc.cluster.local:3100/loki/api/v1/push
 
-resources:
-  requests:
-    cpu: 10m
-    memory: 64Mi
-  limits:
-    cpu: 100m
-    memory: 128Mi
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

@@ -1,39 +1,36 @@
-# ingress-nginx Helm values — local (Kind) target
-#
-# The controller runs on the control-plane node (ingress-ready=true) and uses
-# hostPort to bind to the node's ports 80/443. Kind's extraPortMappings in
-# bootstrap/kind-config.yaml forward host ports 80/443 to that node, so
-# traffic at localhost:80 reaches the ingress controller.
+# ingress-nginx umbrella chart values.
+# All keys are scoped under ingress-nginx: (the dependency name in Chart.yaml).
 
-controller:
-  # Use NodePort service — required for Kind; hostPort does the actual binding
-  service:
-    type: NodePort
+ingress-nginx:
+  controller:
+    # NodePort service — hostPort binds to the Kind control-plane node's ports
+    service:
+      type: NodePort
 
-  # Bind directly to the host network ports (80/443) on the ingress-ready node
-  hostPort:
-    enabled: true
+    # Bind directly to host ports 80/443 on the ingress-ready node
+    hostPort:
+      enabled: true
 
-  # Schedule the controller only on the node labelled ingress-ready=true
-  nodeSelector:
-    ingress-ready: "true"
+    # Schedule only on the node labelled ingress-ready=true
+    nodeSelector:
+      ingress-ready: "true"
 
-  # The control-plane node has a NoSchedule taint by default — tolerate it
-  tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Equal"
-      effect: "NoSchedule"
+    # The control-plane node has a NoSchedule taint — tolerate it
+    tolerations:
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Equal"
+        effect: "NoSchedule"
 
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
 
-  # Metrics endpoint for Prometheus scraping (wired up in Phase 2)
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: false  # Enable in Phase 2 when kube-prometheus-stack is deployed
+    # Metrics endpoint for Prometheus scraping (wired up in Phase 2)
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: false  # Enable in Phase 2 when kube-prometheus-stack is deployed

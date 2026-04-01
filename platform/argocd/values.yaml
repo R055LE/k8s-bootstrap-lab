@@ -1,62 +1,60 @@
-# ArgoCD Helm values — local (Kind) target
-#
-# ArgoCD server runs in insecure mode (no TLS) because TLS is terminated at the
-# nginx ingress layer. This is standard practice when using an ingress controller.
+# ArgoCD umbrella chart values.
+# All keys are scoped under argo-cd: (the dependency name in Chart.yaml).
 
-configs:
-  params:
-    # Disable TLS on the ArgoCD server — TLS terminates at ingress-nginx
-    server.insecure: "true"
+argo-cd:
+  configs:
+    params:
+      # TLS terminated at ingress-nginx — run ArgoCD server in insecure mode
+      server.insecure: "true"
 
-server:
-  ingress:
-    enabled: true
-    ingressClassName: nginx
-    hostname: argocd.localhost
-    # No TLS — accessing via plain HTTP on localhost for local dev
-    tls: false
+  server:
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hostname: argocd.localhost
+      tls: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
 
-  # Resource limits appropriate for a local Kind cluster
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
+  repoServer:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        # Bumped from 256Mi — repo-server needs headroom to render large charts
+        # (kube-prometheus-stack generates ~500 resources)
+        memory: 512Mi
 
-repoServer:
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
+  applicationSet:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 
-applicationSet:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 128Mi
+  notifications:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 
-notifications:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 128Mi
-
-redis:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 128Mi
+  redis:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

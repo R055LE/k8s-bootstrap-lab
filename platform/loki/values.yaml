@@ -1,64 +1,54 @@
-# Loki Helm values — local (Kind) target
-#
-# SingleBinary mode: one pod handles reads, writes, and storage.
-# Uses filesystem storage — fine for local dev, not suitable for production.
-# For production: switch to SimpleScalable mode + S3/GCS object storage.
-
-deploymentMode: SingleBinary
+# Loki umbrella chart values.
+# All keys are scoped under loki: (the dependency name in Chart.yaml).
+# Note: loki.loki is the Loki application config section.
 
 loki:
-  auth_enabled: false
+  deploymentMode: SingleBinary
 
-  commonConfig:
-    replication_factor: 1
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: filesystem
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
 
-  storage:
-    type: filesystem
+  singleBinary:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    persistence:
+      enabled: true
+      size: 5Gi
 
-  schemaConfig:
-    configs:
-      - from: "2024-01-01"
-        store: tsdb
-        object_store: filesystem
-        schema: v13
-        index:
-          prefix: loki_index_
-          period: 24h
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  backend:
+    replicas: 0
 
-singleBinary:
-  replicas: 1
+  gateway:
+    enabled: false
 
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+  minio:
+    enabled: false
 
-  persistence:
-    enabled: true
-    size: 5Gi
+  lokiCanary:
+    enabled: false
 
-# Disable distributed mode components — not used in SingleBinary
-read:
-  replicas: 0
-write:
-  replicas: 0
-backend:
-  replicas: 0
-
-# Disable gateway — Promtail talks directly to the Loki service
-gateway:
-  enabled: false
-
-# Disable object storage backend
-minio:
-  enabled: false
-
-# Disable canary and tests — not needed for local dev
-lokiCanary:
-  enabled: false
-
-test:
-  enabled: false
+  test:
+    enabled: false
