@@ -1,0 +1,18 @@
+# EKS overlay — Falco works correctly on EKS with Amazon Linux 2 nodes.
+# The modern_ebpf driver (set in base values.yaml) is fully supported on the
+# AL2 kernel 5.10+ that ships with EKS 1.27+.
+#
+# No driver change needed. This overlay removes the WSL2 workaround and
+# confirms the containerd socket path for AL2.
+
+falco:
+  driver:
+    kind: modern_ebpf
+
+  collectors:
+    enabled: true
+    containerd:
+      enabled: true
+      socket: /run/containerd/containerd.sock  # same path on AL2
+    docker:
+      enabled: false

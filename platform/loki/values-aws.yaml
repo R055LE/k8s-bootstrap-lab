@@ -1,0 +1,35 @@
+# EKS overlay — switches Loki from filesystem storage to S3.
+# Dynamic values (bucket name, region, IRSA ARN) are injected by setup-aws.sh
+# via ArgoCD helm.parameters — this file contains only structural changes.
+
+loki:
+  loki:
+    storage:
+      type: s3
+
+    # Schema updated to use S3-backed object store
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: s3
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+
+    # Storage config — bucket/region/role injected via helm.parameters at apply time
+    storage_config:
+      tsdb_shipper:
+        active_index_directory: /var/loki/index
+        cache_location: /var/loki/index_cache
+
+  # No PVC needed — S3 is the durable backend
+  singleBinary:
+    persistence:
+      enabled: false
+
+  # ServiceAccount annotation for IRSA — ARN injected via helm.parameters
+  serviceAccount:
+    create: true
+    annotations: {}

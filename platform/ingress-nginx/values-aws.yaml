@@ -1,0 +1,18 @@
+# EKS overlay — overrides the Kind hostPort/NodeSelector config.
+# On EKS the AWS cloud controller provisions a Network Load Balancer
+# for any Service of type LoadBalancer.
+
+ingress-nginx:
+  controller:
+    service:
+      type: LoadBalancer
+      annotations:
+        # Provision an internet-facing NLB (not the legacy CLB)
+        service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+        service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+
+    # Disable Kind-specific hostPort and node targeting
+    hostPort:
+      enabled: false
+    nodeSelector: {}
+    tolerations: []

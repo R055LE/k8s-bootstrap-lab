@@ -35,15 +35,28 @@ A production-grade Kubernetes platform bootstrap for local development (Kind/WSL
 task prerequisites   # checks all tools and prints install hints
 ```
 
-Required tools:
+Required tools (all targets):
 
 | Tool | Install |
 |---|---|
 | Docker Engine / Docker Desktop | [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) |
 | kubectl | `curl -LO https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl` |
 | Helm | `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \| bash` |
-| Kind | `curl -Lo kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && sudo install kind /usr/local/bin/` |
 | Task | `sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin` |
+
+Additional tools for `TARGET=local`:
+
+| Tool | Install |
+|---|---|
+| Kind | `curl -Lo kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && sudo install kind /usr/local/bin/` |
+
+Additional tools for `TARGET=aws`:
+
+| Tool | Install |
+|---|---|
+| Terraform ≥ 1.6 | [developer.hashicorp.com/terraform/install](https://developer.hashicorp.com/terraform/install) |
+| AWS CLI v2 | [docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) |
+| jq | `sudo apt-get install -y jq` |
 
 **WSL2 users:** Apply the inotify limits before bootstrapping or Promtail will crash:
 
@@ -92,24 +105,37 @@ Ingress (requires `/etc/hosts` entry above):
 │   └── kind-config.yaml      # Kind cluster (1 control-plane + 2 workers)
 ├── config/
 │   ├── local.env             # Non-secret config (chart versions, namespaces)
-│   └── local.secrets.env     # Generated on first run — gitignored
+│   ├── local.secrets.env     # Generated on first run — gitignored
+│   ├── aws.env.example       # AWS config template (copy to aws.env and fill in)
+│   └── aws.env               # AWS config — gitignored
 ├── platform/
-│   ├── app-of-apps.yaml      # Root ArgoCD Application
-│   ├── apps/                 # ArgoCD Application manifests (one per component)
+│   ├── app-of-apps.yaml      # Root ArgoCD Application (local)
+│   ├── app-of-apps-aws.yaml  # Root ArgoCD Application (AWS, envsubst)
+│   ├── apps/                 # ArgoCD Application manifests (local)
+│   ├── apps-aws/             # ArgoCD Application manifests (AWS, envsubst)
 │   ├── argocd/               # Umbrella Helm chart — wraps argo/argo-cd
 │   ├── gitea/                # Umbrella Helm chart — wraps gitea-charts/gitea
-│   ├── ingress-nginx/        # Umbrella Helm chart — wraps ingress-nginx
+│   ├── ingress-nginx/        # Umbrella chart — values-aws.yaml for NLB mode
 │   ├── monitoring/           # Umbrella chart — kube-prometheus-stack + dashboards
-│   ├── loki/                 # Umbrella chart — grafana/loki
+│   ├── loki/                 # Umbrella chart — values-aws.yaml for S3 storage
 │   ├── promtail/             # Umbrella chart — grafana/promtail
-│   ├── trivy-operator/       # Umbrella chart — aquasecurity/trivy-operator
-│   └── falco/                # Umbrella chart — falcosecurity/falco
+│   ├── trivy-operator/       # Umbrella chart — values-aws.yaml for IRSA
+│   └── falco/                # Umbrella chart — values-aws.yaml for AL2 eBPF
+├── terraform/
+│   ├── modules/
+│   │   ├── vpc/              # VPC, IGW, public subnets, EKS/NLB tags
+│   │   ├── eks/              # IAM, EKS cluster, node group, OIDC provider
+│   │   └── irsa/             # IRSA roles for Loki (S3) and Trivy (ECR)
+│   └── environments/dev/     # Wires modules together, S3 bucket, outputs
 ├── scripts/
-│   ├── prerequisites.sh      # Tool availability checks
+│   ├── prerequisites.sh      # Tool checks (kind for local, terraform/aws/jq for AWS)
 │   ├── status.sh             # Platform health check
 │   ├── open-argocd.sh        # Port-forward ArgoCD
 │   ├── open-dashboard.sh     # Port-forward Grafana
-│   └── teardown-local.sh     # Delete Kind cluster
+│   ├── teardown-local.sh     # Delete Kind cluster
+│   ├── create-tf-state-bucket.sh  # Create S3 backend bucket (once)
+│   ├── setup-aws.sh          # 8-step EKS bootstrap
+│   └── teardown-aws.sh       # Ordered EKS teardown
 └── docs/
     └── troubleshooting.md    # Known issues and fixes
 ```
@@ -193,7 +219,53 @@ This is expected. Falco works correctly on AWS EKS (Amazon Linux 2 nodes, Phase 
 
 See [docs/troubleshooting.md](docs/troubleshooting.md) for a full list of issues encountered and their fixes.
 
-## Teardown
+## Quick Start — AWS (EKS)
+
+**Estimated cost:** ~$0.10/hr (EKS control plane) + ~$0.08/hr per `t3.medium` node. Always destroy when done.
+
+```bash
+# 1. Copy and fill in config
+cp config/aws.env.example config/aws.env
+# Edit: AWS_REGION, EKS_CLUSTER_NAME, TF_STATE_BUCKET, REPO_URL, REPO_BRANCH
+
+# 2. Create Terraform state bucket (once per AWS account/region)
+task tf-state-bucket
+
+# 3. Bootstrap — provisions VPC + EKS via Terraform, then bootstraps the platform
+task bootstrap TARGET=aws
+
+# 4. Watch platform sync
+task status TARGET=aws
+
+# 5. Access ArgoCD
+task argocd TARGET=aws   # → http://localhost:8080
+```
+
+### AWS Architecture
+
+```
+VPC (2 public subnets, 2 AZs)
+└── EKS 1.31 (managed node group, 2× t3.medium)
+    ├── ingress-nginx       — AWS NLB (internet-facing)
+    ├── ArgoCD              — GitOps from GitHub
+    ├── kube-prometheus-stack
+    ├── Loki                — logs to S3 (IRSA)
+    ├── Promtail
+    ├── Falco               — eBPF runtime detection (AL2 kernel)
+    └── Trivy Operator      — pulls images via ECR (IRSA)
+```
+
+IRSA (IAM Roles for Service Accounts) is provisioned by Terraform — no static credentials in-cluster.
+
+### Teardown
+
+```bash
+task destroy TARGET=aws  # deletes ArgoCD apps → waits for NLB cleanup → terraform destroy
+```
+
+**Important:** The Terraform state bucket (`TF_STATE_BUCKET`) is not deleted by teardown — delete it manually from the AWS console when you're fully done.
+
+## Teardown — Local
 
 ```bash
 task destroy             # deletes the Kind cluster (all data lost)
@@ -204,5 +276,5 @@ task destroy             # deletes the Kind cluster (all data lost)
 - [x] Phase 1 — Local foundation (Kind, ingress-nginx, Gitea, ArgoCD)
 - [x] Phase 2 — Observability (Prometheus, Grafana, Loki, Promtail)
 - [x] Phase 3 — Security (Trivy Operator, Falco + Falcosidekick)
-- [ ] Phase 4 — AWS EKS (Terraform: VPC, EKS, IAM/IRSA, EKS-specific overlays)
+- [x] Phase 4 — AWS EKS (Terraform: VPC, EKS, IAM/IRSA, EKS-specific overlays)
 - [ ] Phase 5 — Documentation, architecture diagrams, sample app

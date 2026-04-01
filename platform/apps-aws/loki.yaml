@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  source:
+    repoURL: ${REPO_URL}
+    targetRevision: ${REPO_BRANCH}
+    path: platform/loki
+    helm:
+      releaseName: loki
+      valueFiles:
+        - values.yaml
+        - values-aws.yaml
+      # Dynamic values injected by setup-aws.sh via envsubst at apply time.
+      # The values-aws.yaml provides the structural S3 config; these parameters
+      # supply the environment-specific values that cannot be committed to git.
+      parameters:
+        - name: loki.loki.storage.s3.region
+          value: ${AWS_REGION}
+        - name: loki.loki.storage.s3.bucketnames
+          value: ${LOKI_S3_BUCKET_NAME}
+        - name: loki.serviceAccount.annotations.eks\.amazonaws\.com/role-arn
+          value: ${LOKI_IRSA_ROLE_ARN}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: logging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

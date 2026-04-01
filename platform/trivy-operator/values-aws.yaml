@@ -1,0 +1,12 @@
+# EKS overlay — adds IRSA annotation for ECR access and relaxes Kind-specific
+# concurrency limits. The IRSA role ARN is injected via helm.parameters at
+# apply time by setup-aws.sh.
+
+trivy-operator:
+  serviceAccount:
+    create: true
+    annotations: {}  # ARN injected via helm.parameters
+
+  operator:
+    # EKS nodes have more headroom than Kind — allow more concurrent scans
+    scanJobsConcurrentLimit: 5

@@ -1,0 +1,25 @@
+# Root ArgoCD Application for AWS EKS.
+# Points at platform/apps-aws/ in GitHub (not in-cluster Gitea).
+# Applied by setup-aws.sh after envsubst injects REPO_URL and REPO_BRANCH.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  source:
+    repoURL: ${REPO_URL}
+    targetRevision: ${REPO_BRANCH}
+    path: platform/apps-aws
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

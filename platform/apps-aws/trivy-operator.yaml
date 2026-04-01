@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trivy-operator
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.io
+spec:
+  project: default
+  source:
+    repoURL: ${REPO_URL}
+    targetRevision: ${REPO_BRANCH}
+    path: platform/trivy-operator
+    helm:
+      releaseName: trivy-operator
+      valueFiles:
+        - values.yaml
+        - values-aws.yaml
+      parameters:
+        - name: trivy-operator.serviceAccount.annotations.eks\.amazonaws\.com/role-arn
+          value: ${TRIVY_IRSA_ROLE_ARN}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: trivy-system
+  ignoreDifferences:
+    - group: apps
+      kind: ReplicaSet
+      jsonPointers:
+        - /status/terminatingReplicas
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /status/terminatingReplicas
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /status/terminatingReplicas
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true

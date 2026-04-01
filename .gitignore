@@ -4,6 +4,7 @@
 *.tfstate.*
 *.tfplan
 .terraform.lock.hcl
+terraform.tfvars
 
 # Secrets and local overrides — never commit real values
 config/aws.env

@@ -57,18 +57,23 @@ tasks:
     internal: true
     desc: Provision EKS cluster via Terraform and bootstrap platform
     cmds:
-      - bash scripts/prerequisites.sh
-      - bash scripts/setup-aws.sh
+      - TARGET=aws bash scripts/prerequisites.sh
+      - bash scripts/setup-aws.sh {{.CLI_ARGS}}
 
   destroy:aws:
     internal: true
     desc: Tear down AWS resources via Terraform
     cmds:
-      - bash scripts/teardown-aws.sh
+      - bash scripts/teardown-aws.sh {{.CLI_ARGS}}
 
   # ── Utilities ───────────────────────────────────────────────────────────────
 
   prerequisites:
     desc: "Check all required tools are installed"
     cmds:
-      - bash scripts/prerequisites.sh
+      - TARGET={{.TARGET}} bash scripts/prerequisites.sh
+
+  tf-state-bucket:
+    desc: "Create S3 bucket for Terraform state (run once before task bootstrap TARGET=aws)"
+    cmds:
+      - bash scripts/create-tf-state-bucket.sh
