@@ -17,13 +17,24 @@ trivy-operator:
     vulnerabilityScannerScanOnlyCurrentRevisions: true
 
   trivy:
+    # Use direct registries — 0.32.1 chart defaults to mirror.gcr.io which
+    # is unreliable for trivy-db; override all mirror.gcr.io references.
+    image:
+      registry: docker.io
+    # DB registry split into registry + repo (0.32.1 chart change)
+    dbRegistry: ghcr.io
+    dbRepository: aquasecurity/trivy-db
+    javaDbRegistry: ghcr.io
+    javaDbRepository: aquasecurity/trivy-java-db
     # Report all severities
     severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
     # Include unfixed vulnerabilities so we see the full picture
     ignoreUnfixed: false
-    # Offline mode for subsequent scans (cache DB in a PVC)
-    dbRepository: ghcr.io/aquasecurity/trivy-db
-    javaDbRepository: ghcr.io/aquasecurity/trivy-java-db
+
+  # Policy bundle uses its own registry setting
+  policiesBundle:
+    registry: ghcr.io
+    repository: aquasecurity/trivy-checks
     # Scan job container resources — 256Mi minimum to avoid OOMKilled on large images
     resources:
       requests:
