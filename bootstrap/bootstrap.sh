@@ -180,14 +180,14 @@ else
   echo "✓ Committed."
 fi
 
-# Add/update remote and push
-if git remote get-url origin &>/dev/null; then
-  git remote set-url origin "${GITEA_REMOTE}"
+# Add/update gitea remote and push
+if git remote get-url gitea &>/dev/null; then
+  git remote set-url gitea "${GITEA_REMOTE}"
 else
-  git remote add origin "${GITEA_REMOTE}"
+  git remote add gitea "${GITEA_REMOTE}"
 fi
 
-git push -u origin main --force-with-lease 2>/dev/null || git push -u origin main --force
+git push -u gitea main --force-with-lease 2>/dev/null || git push -u gitea main --force
 echo "✓ Code pushed to Gitea."
 
 # Stop port-forward — no longer needed
