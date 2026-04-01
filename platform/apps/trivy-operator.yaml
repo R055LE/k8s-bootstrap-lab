@@ -16,6 +16,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: trivy-system
+  # Ignore .status.terminatingReplicas — added in k8s 1.31, not yet in ArgoCD schema
+  ignoreDifferences:
+    - group: apps
+      kind: ReplicaSet
+      jsonPointers:
+        - /status/terminatingReplicas
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /status/terminatingReplicas
   syncPolicy:
     automated:
       prune: true
@@ -23,3 +33,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
