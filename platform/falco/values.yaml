@@ -5,8 +5,12 @@
 
 falco:
   driver:
-    # modern_ebpf: no kernel module required, works on WSL2 kernel 6.6+
-    kind: modern_ebpf
+    # ebpf: uses a pre-compiled probe downloaded at startup.
+    # modern_ebpf fails on WSL2 (microsoft-standard kernel) due to BTF constraints
+    # in the CO-RE eBPF approach. The legacy ebpf probe uses a different attachment
+    # mechanism and works on WSL2 when the probe is available for the kernel version.
+    # On real Linux (EKS), modern_ebpf works fine.
+    kind: ebpf
 
   # Collect container metadata for richer alert context
   collectors:
