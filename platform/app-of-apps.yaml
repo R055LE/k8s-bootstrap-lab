@@ -5,7 +5,7 @@
 #
 # Once applied, ArgoCD discovers all Application manifests under platform/apps/
 # and syncs them automatically. Adding a new platform component = adding a file
-# to platform/apps/ and pushing to ${REPO_BRANCH}.
+# to platform/apps/ and pushing to main.
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -18,8 +18,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ${REPO_URL}
-    targetRevision: ${REPO_BRANCH}
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
+    targetRevision: main
     path: platform/apps
   destination:
     server: https://kubernetes.default.svc

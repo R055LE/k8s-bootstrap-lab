@@ -171,6 +171,14 @@ if [[ ! -d ".git" ]]; then
   git checkout -b main
 fi
 
+# Substitute REPO_URL/REPO_BRANCH into Application manifests before committing.
+# ArgoCD reads these files directly from git — they must have real values, not
+# placeholders. set -a ensures the sourced vars are exported for envsubst.
+echo "→ Injecting REPO_URL into Application manifests..."
+for f in "${REPO_ROOT}/platform/apps/"*.yaml "${REPO_ROOT}/platform/app-of-apps.yaml"; do
+  envsubst '${REPO_URL} ${REPO_BRANCH}' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+done
+
 # Stage everything (excluding gitignored files)
 git add .
 if git diff --cached --quiet; then

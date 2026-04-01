@@ -26,8 +26,8 @@ spec:
         valueFiles:
           - $values/platform/argocd/values.yaml
     # Values file from this repo (the $values ref)
-    - repoURL: ${REPO_URL}
-      targetRevision: ${REPO_BRANCH}
+    - repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea-admin/zero-to-cluster.git
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
