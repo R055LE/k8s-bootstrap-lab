@@ -1,10 +1,10 @@
-# zero-to-cluster
+# K8s Bootstrap Lab
 
 A production-grade Kubernetes platform bootstrap for local development (Kind/WSL2) and AWS (EKS). Demonstrates end-to-end platform engineering: GitOps, observability, and runtime security — all managed declaratively.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   zero-to-cluster                       │
+│                  K8s Bootstrap Lab                      │
 │                                                         │
 │  Bootstrap ──► Gitea ──► ArgoCD ──► Platform Apps       │
 │                                                         │
