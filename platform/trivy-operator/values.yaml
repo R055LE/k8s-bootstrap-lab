@@ -11,8 +11,12 @@ trivy-operator:
   operator:
     vulnerabilityScannerEnabled: true
     configAuditScannerEnabled: true
-    # Reduce noise for local dev — disable compliance reports
+    # Reduce noise for local dev — disable compliance, SBOM, and secret scanning
     clusterComplianceEnabled: false
+    sbomGenerationEnabled: false
+    exposedSecretScannerEnabled: false
+    # Limit concurrency to avoid trivy DB cache lock contention (trivy 0.69+)
+    scanJobsConcurrentLimit: 2
     # Scan all namespaces
     vulnerabilityScannerScanOnlyCurrentRevisions: true
 
