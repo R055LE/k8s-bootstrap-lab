@@ -15,7 +15,10 @@ trivy-operator:
     clusterComplianceEnabled: false
     sbomGenerationEnabled: false
     exposedSecretScannerEnabled: false
-    # Limit concurrency to avoid trivy DB cache lock contention (trivy 0.69+)
+    # Use built-in trivy server: one server caches the DB, scan containers act
+    # as clients — eliminates the cache lock contention in trivy 0.69+
+    builtInTrivyServer: true
+    # Limit concurrency for resource constraints on Kind
     scanJobsConcurrentLimit: 2
     # Scan all namespaces
     vulnerabilityScannerScanOnlyCurrentRevisions: true
