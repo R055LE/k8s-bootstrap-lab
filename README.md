@@ -221,7 +221,7 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for a full list of issues
 
 ## Quick Start — AWS (EKS)
 
-**Estimated cost:** ~$0.10/hr (EKS control plane) + ~$0.08/hr per `t3.medium` node. Always destroy when done.
+**Estimated cost:** ~$0.10/hr (EKS control plane) + ~$0.08/hr per `t3.medium` node. Always destroy when done. See [docs/aws-testing.md](docs/aws-testing.md) for cost guardrails and a pre-flight checklist.
 
 ```bash
 # 1. Copy and fill in config
@@ -277,4 +277,7 @@ task destroy             # deletes the Kind cluster (all data lost)
 - [x] Phase 2 — Observability (Prometheus, Grafana, Loki, Promtail)
 - [x] Phase 3 — Security (Trivy Operator, Falco + Falcosidekick)
 - [x] Phase 4 — AWS EKS (Terraform: VPC, EKS, IAM/IRSA, EKS-specific overlays)
-- [ ] Phase 5 — Documentation, architecture diagrams, sample app
+- [ ] Phase 5 — Sample app, architecture diagrams, portfolio polish
+  - Deploy a real workload that exercises the full stack (Trivy reports, Falco events, logs)
+  - Architecture diagrams for local and AWS topologies
+  - General cleanup and portfolio presentation
