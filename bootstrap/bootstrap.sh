@@ -166,8 +166,6 @@ cd "${REPO_ROOT}"
 if [[ ! -d ".git" ]]; then
   echo "→ Initialising git repository..."
   git init
-  git config user.email "bootstrap@zero-to-cluster.local"
-  git config user.name "zero-to-cluster bootstrap"
   git checkout -b main
 fi
 
