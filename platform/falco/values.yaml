@@ -1,0 +1,51 @@
+# Falco umbrella chart values.
+# Runtime threat detection DaemonSet. Uses modern_ebpf probe (requires kernel
+# >= 5.8 — WSL2 kernel 6.6 satisfies this). Falcosidekick forwards alerts to
+# Loki so they appear alongside application logs in Grafana.
+
+falco:
+  driver:
+    # modern_ebpf: no kernel module required, works on WSL2 kernel 6.6+
+    kind: modern_ebpf
+
+  # Collect container metadata for richer alert context
+  collectors:
+    enabled: true
+    containerd:
+      enabled: true
+      socket: /run/containerd/containerd.sock
+    docker:
+      enabled: false
+
+  falco:
+    # Enable gRPC so falcosidekick can receive events
+    grpc:
+      enabled: true
+      bind_address: "unix:///run/falco/falco.sock"
+      threadiness: 0
+    grpc_output:
+      enabled: true
+
+    # JSON output for structured logs
+    json_output: true
+    json_include_output_property: true
+
+  # Falcosidekick — routes Falco alerts to Loki (and other outputs)
+  falcosidekick:
+    enabled: true
+    config:
+      loki:
+        hostport: "http://loki.logging.svc.cluster.local:3100"
+        endpoint: "/loki/api/v1/push"
+        # Forward all priority levels — filter in Grafana as needed
+        minimumpriority: "debug"
+        # Extra labels added to every Loki log entry for easy querying
+        customlabels: "source:falco"
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

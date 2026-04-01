@@ -107,6 +107,23 @@ else
   echo "  (logging namespace not found — Phase 2 not yet deployed)"
 fi
 
+# ── Security ──────────────────────────────────────────────────────────────────
+
+echo ""
+echo "→ Security"
+if kubectl get namespace trivy-system &>/dev/null; then
+  check_pods_ready "app.kubernetes.io/name=trivy-operator" "trivy-system" "trivy-operator"
+else
+  echo "  (trivy-system namespace not found — Phase 3 not yet deployed)"
+fi
+
+if kubectl get namespace falco &>/dev/null; then
+  check_pods_ready "app.kubernetes.io/name=falco" "falco" "falco"
+  check_pods_ready "app.kubernetes.io/name=falcosidekick" "falco" "falcosidekick"
+else
+  echo "  (falco namespace not found — Phase 3 not yet deployed)"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 echo ""

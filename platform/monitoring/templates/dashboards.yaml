@@ -1,0 +1,138 @@
+---
+# Trivy Vulnerability Dashboard
+# Displays VulnerabilityReport counts from Prometheus metrics exposed by Trivy Operator.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trivy-vulnerability-dashboard
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  trivy-vulnerabilities.json: |
+    {
+      "uid": "trivy-vulns",
+      "title": "Trivy — Vulnerability Reports",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "1m",
+      "time": { "from": "now-24h", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "datasource", "type": "datasource", "query": "prometheus", "hide": 0 }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Critical",
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [{ "expr": "sum(trivy_image_vulnerabilities{severity=\"CRITICAL\"}) or vector(0)", "legendFormat": "" }],
+          "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "red", "mode": "fixed" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } } }
+        },
+        {
+          "id": 2, "type": "stat", "title": "High",
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [{ "expr": "sum(trivy_image_vulnerabilities{severity=\"HIGH\"}) or vector(0)", "legendFormat": "" }],
+          "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "orange", "mode": "fixed" } } }
+        },
+        {
+          "id": 3, "type": "stat", "title": "Medium",
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [{ "expr": "sum(trivy_image_vulnerabilities{severity=\"MEDIUM\"}) or vector(0)", "legendFormat": "" }],
+          "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "yellow", "mode": "fixed" } } }
+        },
+        {
+          "id": 4, "type": "stat", "title": "Low / Unknown",
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [{ "expr": "sum(trivy_image_vulnerabilities{severity=~\"LOW|UNKNOWN\"}) or vector(0)", "legendFormat": "" }],
+          "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "blue", "mode": "fixed" } } }
+        },
+        {
+          "id": 5, "type": "table", "title": "Vulnerabilities by Image and Severity",
+          "gridPos": { "h": 14, "w": 24, "x": 0, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [{
+            "expr": "sort_desc(sum by (image_tag, severity) (trivy_image_vulnerabilities))",
+            "legendFormat": "{{image_tag}} — {{severity}}",
+            "instant": true,
+            "format": "table"
+          }],
+          "transformations": [
+            { "id": "filterFieldsByName", "options": { "include": { "names": ["image_tag", "severity", "Value"] } } },
+            { "id": "sortBy", "options": { "fields": [{ "displayName": "Value", "desc": true }] } }
+          ]
+        }
+      ]
+    }
+---
+# Falco Security Events Dashboard
+# Queries Falco alerts forwarded to Loki by Falcosidekick.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-security-events-dashboard
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  falco-events.json: |
+    {
+      "uid": "falco-events",
+      "title": "Falco — Security Events",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "lokids", "type": "datasource", "query": "loki", "hide": 0 },
+          {
+            "name": "priority",
+            "type": "custom",
+            "query": "Emergency,Alert,Critical,Error,Warning,Notice,Informational,Debug",
+            "current": { "text": "All", "value": "$__all" },
+            "includeAll": true,
+            "multi": true,
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Total Events (1h)",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "datasource": { "type": "loki", "uid": "${lokids}" },
+          "targets": [{ "expr": "sum(count_over_time({source=\"falco\"}[1h]))", "legendFormat": "" }],
+          "options": { "reduceOptions": { "calcs": ["sum"] }, "colorMode": "background" },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "semi-dark-red", "mode": "fixed" } } }
+        },
+        {
+          "id": 2, "type": "timeseries", "title": "Events Over Time",
+          "gridPos": { "h": 8, "w": 18, "x": 6, "y": 0 },
+          "datasource": { "type": "loki", "uid": "${lokids}" },
+          "targets": [{ "expr": "sum by (priority) (count_over_time({source=\"falco\"}[2m]))", "legendFormat": "{{priority}}" }],
+          "options": { "tooltip": { "mode": "multi" } }
+        },
+        {
+          "id": 3, "type": "logs", "title": "Security Event Log",
+          "gridPos": { "h": 16, "w": 24, "x": 0, "y": 8 },
+          "datasource": { "type": "loki", "uid": "${lokids}" },
+          "targets": [{ "expr": "{source=\"falco\"}", "legendFormat": "" }],
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showTime": true,
+            "wrapLogMessage": false
+          }
+        }
+      ]
+    }

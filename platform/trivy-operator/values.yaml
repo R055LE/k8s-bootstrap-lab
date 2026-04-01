@@ -1,0 +1,40 @@
+# Trivy Operator umbrella chart values.
+# Scans all workloads in the cluster for vulnerabilities, misconfigurations,
+# and exposed secrets. Results stored as CRDs (VulnerabilityReport, etc.)
+# and exposed as Prometheus metrics.
+
+trivy-operator:
+  # Expose metrics for Prometheus scraping
+  serviceMonitor:
+    enabled: true
+
+  operator:
+    vulnerabilityScannerEnabled: true
+    configAuditScannerEnabled: true
+    # Reduce noise for local dev — disable compliance reports
+    clusterComplianceEnabled: false
+    # Scan all namespaces
+    vulnerabilityScannerScanOnlyCurrentRevisions: true
+
+  trivy:
+    # Report all severities
+    severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+    # Include unfixed vulnerabilities so we see the full picture
+    ignoreUnfixed: false
+    # Offline mode for subsequent scans (cache DB in a PVC)
+    dbRepository: ghcr.io/aquasecurity/trivy-db
+    javaDbRepository: ghcr.io/aquasecurity/trivy-java-db
+
+  # Resource limits for scan jobs (runs as batch Jobs, not a long-lived pod)
+  scanJob:
+    podTemplateSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
