@@ -10,9 +10,7 @@ trivy-operator:
 
   operator:
     vulnerabilityScannerEnabled: true
-    # Disabled: Rego parse error with chart 0.22.0 on k8s 1.31+
-    # ("unexpected minus token") — re-enable when chart is updated
-    configAuditScannerEnabled: false
+    configAuditScannerEnabled: true
     # Reduce noise for local dev — disable compliance reports
     clusterComplianceEnabled: false
     # Scan all namespaces
