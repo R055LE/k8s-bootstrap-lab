@@ -26,6 +26,10 @@ spec:
       kind: Deployment
       jsonPointers:
         - /status/terminatingReplicas
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /status/terminatingReplicas
   syncPolicy:
     automated:
       prune: true
