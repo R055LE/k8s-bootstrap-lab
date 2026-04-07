@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../config/local.env
+# shellcheck disable=SC1091 # env file is generated locally, not in repo
 source "${SCRIPT_DIR}/../config/local.env"
 
 FAILED=0

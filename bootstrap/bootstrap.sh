@@ -20,13 +20,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# shellcheck source=../config/local.env
+# shellcheck disable=SC1091 # env file is generated locally, not in repo
 source "${REPO_ROOT}/config/local.env"
 
 # Load secrets if they exist (generated on first run)
 SECRETS_FILE="${REPO_ROOT}/config/local.secrets.env"
 if [[ -f "${SECRETS_FILE}" ]]; then
-  # shellcheck disable=SC1090
+  # shellcheck disable=SC1090 # secrets file path is dynamic, generated at runtime
   source "${SECRETS_FILE}"
 fi
 
