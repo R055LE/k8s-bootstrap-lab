@@ -1,0 +1,134 @@
+name: Lint & Validate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Shell lint — ShellCheck on all bash scripts.
+  # Fast feedback on syntax errors, quoting issues, and common pitfalls.
+  # ---------------------------------------------------------------------------
+  shell-lint:
+    name: Shell lint (ShellCheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: ShellCheck — bootstrap/
+        run: shellcheck bootstrap/*.sh
+
+      - name: ShellCheck — scripts/
+        run: shellcheck scripts/*.sh
+
+  # ---------------------------------------------------------------------------
+  # Job 2: YAML lint — validate all YAML files for syntax and formatting.
+  # Catches indentation errors, duplicate keys, and line-length issues before
+  # they surface as cryptic Helm or ArgoCD failures.
+  # ---------------------------------------------------------------------------
+  yaml-lint:
+    name: YAML lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: yamllint
+        run: |
+          yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" \
+            platform/ config/ Taskfile.yml
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Helm lint — validate each platform chart.
+  # Runs helm dependency build + helm lint + helm template to catch chart
+  # issues without a cluster. Matrix runs all charts in parallel.
+  # ---------------------------------------------------------------------------
+  helm-lint:
+    name: Helm lint (${{ matrix.chart }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        chart:
+          - argocd
+          - falco
+          - gitea
+          - ingress-nginx
+          - loki
+          - monitoring
+          - promtail
+          - trivy-operator
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: Add dependency repositories
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo add falcosecurity https://falcosecurity.github.io/charts
+          helm repo add gitea https://dl.gitea.com/charts
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add aqua https://aquasecurity.github.io/helm-charts
+          helm repo update
+
+      - name: Build dependencies
+        run: helm dependency build platform/${{ matrix.chart }}
+
+      - name: Helm lint
+        run: helm lint platform/${{ matrix.chart }}
+
+      - name: Helm template (render check)
+        run: |
+          helm template test-release platform/${{ matrix.chart }} \
+            --values platform/${{ matrix.chart }}/values.yaml \
+            > /dev/null
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Terraform validate — syntax and type checking for all modules.
+  # Uses -backend=false so no AWS credentials or state bucket are required.
+  # Matrix runs each module in parallel.
+  # ---------------------------------------------------------------------------
+  terraform-validate:
+    name: Terraform validate (${{ matrix.module }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [vpc, eks, irsa]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: terraform fmt check
+        run: terraform -chdir=terraform/modules/${{ matrix.module }} fmt -check -diff
+
+      - name: terraform init
+        run: terraform -chdir=terraform/modules/${{ matrix.module }} init -backend=false
+
+      - name: terraform validate
+        run: terraform -chdir=terraform/modules/${{ matrix.module }} validate
