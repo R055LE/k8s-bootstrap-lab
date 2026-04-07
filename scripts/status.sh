@@ -42,7 +42,7 @@ else
   exit 1
 fi
 
-not_ready=$(kubectl get nodes --no-headers 2>/dev/null | grep -v " Ready " | wc -l || true)
+not_ready=$(kubectl get nodes --no-headers 2>/dev/null | grep -vc " Ready " || true)
 if [[ "$not_ready" -eq 0 ]]; then
   node_count=$(kubectl get nodes --no-headers 2>/dev/null | wc -l)
   ok "All ${node_count} nodes Ready"

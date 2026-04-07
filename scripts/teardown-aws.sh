@@ -26,6 +26,7 @@ if [[ ! -f "${AWS_ENV}" ]]; then
   exit 1
 fi
 
+# shellcheck disable=SC1090 # aws.env path is dynamic, generated locally
 set -a; source "${AWS_ENV}"; set +a
 
 # ── Confirmation ──────────────────────────────────────────────────────────────
