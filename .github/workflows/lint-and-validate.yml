@@ -24,10 +24,10 @@ jobs:
         run: sudo apt-get install -y shellcheck
 
       - name: ShellCheck — bootstrap/
-        run: shellcheck bootstrap/*.sh
+        run: shellcheck -x bootstrap/*.sh
 
       - name: ShellCheck — scripts/
-        run: shellcheck scripts/*.sh
+        run: shellcheck -x scripts/*.sh
 
   # ---------------------------------------------------------------------------
   # Job 2: YAML lint — validate all YAML files for syntax and formatting.
