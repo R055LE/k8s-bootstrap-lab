@@ -17,8 +17,10 @@ if [[ ! -f "${AWS_ENV}" ]]; then
   exit 1
 fi
 
+set -a
 # shellcheck disable=SC1090 # aws.env path is dynamic, generated locally
-set -a; source "${AWS_ENV}"; set +a
+source "${AWS_ENV}"
+set +a
 
 if [[ -z "${TF_STATE_BUCKET:-}" ]]; then
   echo "✗ TF_STATE_BUCKET is not set in config/aws.env"
@@ -32,10 +34,11 @@ if aws s3api head-bucket --bucket "${TF_STATE_BUCKET}" --region "${AWS_REGION}" 
   exit 0
 fi
 
-aws s3api create-bucket \
-  --bucket "${TF_STATE_BUCKET}" \
-  --region "${AWS_REGION}" \
-  $([ "${AWS_REGION}" != "us-east-1" ] && echo "--create-bucket-configuration" "LocationConstraint=${AWS_REGION}")
+CREATE_ARGS=(--bucket "${TF_STATE_BUCKET}" --region "${AWS_REGION}")
+if [[ "${AWS_REGION}" != "us-east-1" ]]; then
+  CREATE_ARGS+=(--create-bucket-configuration "LocationConstraint=${AWS_REGION}")
+fi
+aws s3api create-bucket "${CREATE_ARGS[@]}"
 
 aws s3api put-bucket-versioning \
   --bucket "${TF_STATE_BUCKET}" \
