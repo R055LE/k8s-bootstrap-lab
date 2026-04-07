@@ -61,7 +61,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [{
             "expr": "sort_desc(sum by (image_tag, severity) (trivy_image_vulnerabilities))",
-            "legendFormat": "{{image_tag}} — {{severity}}",
+            "legendFormat": "{{ "{{" }}image_tag{{ "}}" }} — {{ "{{" }}severity{{ "}}" }}",
             "instant": true,
             "format": "table"
           }],
@@ -118,7 +118,7 @@ data:
           "id": 2, "type": "timeseries", "title": "Events Over Time",
           "gridPos": { "h": 8, "w": 18, "x": 6, "y": 0 },
           "datasource": { "type": "loki", "uid": "${lokids}" },
-          "targets": [{ "expr": "sum by (priority) (count_over_time({source=\"falco\"}[2m]))", "legendFormat": "{{priority}}" }],
+          "targets": [{ "expr": "sum by (priority) (count_over_time({source=\"falco\"}[2m]))", "legendFormat": "{{ "{{" }}priority{{ "}}" }}" }],
           "options": { "tooltip": { "mode": "multi" } }
         },
         {

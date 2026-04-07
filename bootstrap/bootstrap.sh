@@ -20,11 +20,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# shellcheck source=../config/local.env
 source "${REPO_ROOT}/config/local.env"
 
 # Load secrets if they exist (generated on first run)
 SECRETS_FILE="${REPO_ROOT}/config/local.secrets.env"
 if [[ -f "${SECRETS_FILE}" ]]; then
+  # shellcheck disable=SC1090
   source "${SECRETS_FILE}"
 fi
 

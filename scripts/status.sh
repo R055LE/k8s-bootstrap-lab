@@ -4,6 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../config/local.env
 source "${SCRIPT_DIR}/../config/local.env"
 
 FAILED=0
