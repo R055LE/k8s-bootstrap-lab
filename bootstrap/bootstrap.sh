@@ -79,7 +79,7 @@ else
     --version "${INGRESS_NGINX_CHART_VERSION}" \
     --set controller.service.type=NodePort \
     --set controller.hostPort.enabled=true \
-    --set controller.nodeSelector."ingress-ready"=true \
+    --set-string controller.nodeSelector."ingress-ready"=true \
     --set controller.tolerations[0].key="node-role.kubernetes.io/control-plane" \
     --set controller.tolerations[0].operator=Equal \
     --set controller.tolerations[0].effect=NoSchedule \
