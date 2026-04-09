@@ -76,7 +76,7 @@ else
     --version "${INGRESS_NGINX_CHART_VERSION}" \
     --values "${REPO_ROOT}/platform/ingress-nginx/values.yaml" \
     --wait \
-    --timeout 5m
+    --timeout 8m
   echo "✓ ingress-nginx installed."
 fi
 
@@ -111,7 +111,7 @@ else
     --version "${GITEA_CHART_VERSION}" \
     --values "${REPO_ROOT}/platform/gitea/values.yaml" \
     --wait \
-    --timeout 5m
+    --timeout 8m
   echo "✓ Gitea installed."
 fi
 
@@ -212,7 +212,7 @@ else
     --version "${ARGOCD_CHART_VERSION}" \
     --values "${REPO_ROOT}/platform/argocd/values.yaml" \
     --wait \
-    --timeout 5m
+    --timeout 8m
   echo "✓ ArgoCD installed."
 fi
 
