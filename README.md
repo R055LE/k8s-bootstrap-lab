@@ -28,6 +28,7 @@ A production-grade Kubernetes platform bootstrap for local development (Kind/WSL
 | [Promtail](https://grafana.com/docs/loki/latest/send-data/promtail) | Log shipping DaemonSet | 6.16.6 |
 | [Trivy Operator](https://aquasecurity.github.io/trivy-operator) | Vulnerability scanning, CRD-based reports | 0.32.1 |
 | [Falco](https://falco.org) + Falcosidekick | Runtime threat detection → Loki forwarding | 4.8.0 |
+| Sample App | Deliberately vulnerable nginx workload to exercise the full stack | nginx 1.21.6 |
 
 ## Prerequisites
 
@@ -75,7 +76,7 @@ git clone <this-repo> && cd k8s-bootstrap-lab
 task bootstrap              # provisions Kind, Gitea, ArgoCD, and all platform apps
 
 # 2. Add hosts entries for ingress
-echo "127.0.0.1  argocd.localhost  gitea.localhost  grafana.localhost" | sudo tee -a /etc/hosts
+echo "127.0.0.1  argocd.localhost  gitea.localhost  grafana.localhost  sample.localhost" | sudo tee -a /etc/hosts
 
 # 3. Watch ArgoCD sync everything (takes ~3-5 minutes)
 task status
@@ -94,6 +95,7 @@ Ingress (requires `/etc/hosts` entry above):
 - ArgoCD → `http://argocd.localhost`
 - Gitea → `http://gitea.localhost`
 - Grafana → `http://grafana.localhost`
+- Sample App → `http://sample.localhost`
 
 ## Project Structure
 
@@ -120,7 +122,8 @@ Ingress (requires `/etc/hosts` entry above):
 │   ├── loki/                 # Umbrella chart — values-aws.yaml for S3 storage
 │   ├── promtail/             # Umbrella chart — grafana/promtail
 │   ├── trivy-operator/       # Umbrella chart — values-aws.yaml for IRSA
-│   └── falco/                # Umbrella chart — values-aws.yaml for AL2 eBPF
+│   ├── falco/                # Umbrella chart — values-aws.yaml for AL2 eBPF
+│   └── sample-app/           # Deliberately vulnerable nginx — exercises full stack
 ├── terraform/
 │   ├── modules/
 │   │   ├── vpc/              # VPC, IGW, public subnets, EKS/NLB tags
@@ -137,6 +140,8 @@ Ingress (requires `/etc/hosts` entry above):
 │   ├── setup-aws.sh          # 8-step EKS bootstrap
 │   └── teardown-aws.sh       # Ordered EKS teardown
 └── docs/
+    ├── architecture.md       # Architecture diagrams and design decisions
+    ├── aws-testing.md        # AWS cost guardrails and pre-flight checklist
     └── troubleshooting.md    # Known issues and fixes
 ```
 
@@ -277,7 +282,7 @@ task destroy             # deletes the Kind cluster (all data lost)
 - [x] Phase 2 — Observability (Prometheus, Grafana, Loki, Promtail)
 - [x] Phase 3 — Security (Trivy Operator, Falco + Falcosidekick)
 - [x] Phase 4 — AWS EKS (Terraform: VPC, EKS, IAM/IRSA, EKS-specific overlays)
-- [ ] Phase 5 — Sample app, architecture diagrams, portfolio polish
-  - Deploy a real workload that exercises the full stack (Trivy reports, Falco events, logs)
-  - Architecture diagrams for local and AWS topologies
-  - General cleanup and portfolio presentation
+- [x] Phase 5 — Sample app, architecture diagrams, portfolio polish
+  - Sample app (nginx 1.21.6) exercises the full stack — Trivy scans, Promtail logs, Grafana dashboards
+  - [Architecture diagrams](docs/architecture.md) for local and AWS topologies (Mermaid)
+  - Design doc and CLAUDE.md synced with current Taskfile-based workflow

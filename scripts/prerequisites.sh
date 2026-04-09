@@ -51,6 +51,21 @@ if [[ "${TARGET}" == "aws" ]]; then
   check_tool jq        "install: sudo apt-get install -y jq  OR  brew install jq"
 fi
 
+# ── WSL2 inotify limits ──────────────────────────────────────────────────────
+# Promtail DaemonSet needs high inotify limits on WSL2, otherwise it will crash.
+# See docs/troubleshooting.md for details.
+
+if grep -qi microsoft /proc/version 2>/dev/null; then
+  instances=$(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null || echo 0)
+  watches=$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0)
+  if [[ "$instances" -lt 512 ]]; then
+    ERRORS+=("  ✗ fs.inotify.max_user_instances is $instances (need ≥512) — run: sudo sysctl -w fs.inotify.max_user_instances=512")
+  fi
+  if [[ "$watches" -lt 1048576 ]]; then
+    ERRORS+=("  ✗ fs.inotify.max_user_watches is $watches (need ≥1048576) — run: sudo sysctl -w fs.inotify.max_user_watches=1048576")
+  fi
+fi
+
 # ── Result ───────────────────────────────────────────────────────────────────
 
 if [[ ${#ERRORS[@]} -gt 0 ]]; then

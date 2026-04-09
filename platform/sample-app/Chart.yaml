@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sample-app
+description: Sample workload to exercise the full platform stack (Trivy, Promtail, Falco)
+type: application
+version: 1.0.0

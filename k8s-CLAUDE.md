@@ -35,10 +35,9 @@ Full design doc: @k8s-bootstrap-design-doc.md
 - Pin chart versions in Chart.yaml, never use floating tags
 - Separate values files per environment where needed, prefer overlays over duplication
 
-### Makefile
-- Targets should be self-documenting with comments
-- Include a `help` target that lists available commands
-- All targets should work with `TARGET=local` (default) or `TARGET=aws`
+### Taskfile
+- Tasks should be self-documenting with `desc:` fields
+- All tasks should work with `TARGET=local` (default) or `TARGET=aws`
 
 ## Architecture Rules
 
@@ -54,11 +53,11 @@ Full design doc: @k8s-bootstrap-design-doc.md
 Build in order. Do not skip ahead.
 
 ### Phase 1 — Local Foundation
-Makefile, prerequisites check, Kind cluster, ArgoCD install, app-of-apps pattern.
-Verify: `make bootstrap` creates a cluster with ArgoCD running and syncing.
+Taskfile, prerequisites check, Kind cluster, ArgoCD install, app-of-apps pattern.
+Verify: `task bootstrap` creates a cluster with ArgoCD running and syncing.
 
 ### Phase 2 — Observability
-kube-prometheus-stack, Grafana dashboards, Loki + Promtail, `make dashboard`.
+kube-prometheus-stack, Grafana dashboards, Loki + Promtail, `task dashboard`.
 Verify: metrics in Grafana, logs queryable in Loki.
 
 ### Phase 3 — Security
@@ -66,7 +65,7 @@ Trivy Operator, Falco, scan results in Grafana, alerts in Loki.
 Verify: vulnerable image gets flagged, Falco detects suspicious activity.
 
 ### Phase 4 — AWS Target
-Terraform modules (VPC, EKS, IAM/IRSA), EKS value overlays, `make bootstrap TARGET=aws`.
+Terraform modules (VPC, EKS, IAM/IRSA), EKS value overlays, `task bootstrap TARGET=aws`.
 Verify: identical platform on real AWS infrastructure.
 
 ### Phase 5 — Documentation
@@ -74,9 +73,9 @@ Architecture diagrams, README, component docs, sample app.
 
 ## Testing
 
-- `make status` should report health of every component
+- `task status` should report health of every component
 - After any change to platform/, verify ArgoCD syncs cleanly
-- Test teardown after every bootstrap — `make destroy` should leave nothing behind
+- Test teardown after every bootstrap — `task destroy` should leave nothing behind
 - For Terraform: `terraform plan` before `terraform apply`, always
 
 ## Common Mistakes to Avoid

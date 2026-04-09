@@ -69,6 +69,7 @@ jobs:
           - loki
           - monitoring
           - promtail
+          - sample-app
           - trivy-operator
 
     steps:

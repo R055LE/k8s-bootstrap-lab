@@ -1,0 +1,16 @@
+# Sample app — deliberately uses an older nginx image so Trivy Operator
+# reports vulnerabilities against it, proving the security scanning pipeline.
+#
+# To see the scan results:
+#   kubectl get vulnerabilityreports -n sample-app
+#   # or view the Trivy dashboard in Grafana
+
+image:
+  repository: nginx
+  # Pinned old release — known CVEs for Trivy to flag
+  tag: "1.21.6"
+
+replicas: 2
+
+ingress:
+  host: sample.localhost

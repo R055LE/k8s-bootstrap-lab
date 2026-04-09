@@ -83,7 +83,7 @@ This is the repo version of "I walk into environments with no documentation, no 
 
 ```
 zero-to-cluster/
-├── Makefile                    # Entry point — make bootstrap, make destroy, make status
+├── Taskfile.yml                # Entry point — task bootstrap, task destroy, task status
 ├── README.md
 ├── CLAUDE.md                   # Claude Code project context
 ├── config/
@@ -147,17 +147,17 @@ zero-to-cluster/
 
 ```bash
 # One command — creates Kind cluster, installs ArgoCD, syncs all platform apps
-make bootstrap TARGET=local
+task bootstrap TARGET=local
 
 # Check everything is healthy
-make status
+task status
 
 # Access dashboards
-make dashboard          # Opens Grafana in browser
-make argocd             # Opens ArgoCD UI in browser
+task dashboard          # Opens Grafana in browser
+task argocd             # Opens ArgoCD UI in browser
 
 # Tear it all down
-make destroy TARGET=local
+task destroy TARGET=local
 ```
 
 ### AWS Bootstrap
@@ -167,15 +167,15 @@ make destroy TARGET=local
 export AWS_PROFILE=your-profile
 
 # Provisions EKS + bootstraps the full platform
-make bootstrap TARGET=aws
+task bootstrap TARGET=aws
 
 # Same commands work regardless of target
-make status
-make dashboard
-make argocd
+task status
+task dashboard
+task argocd
 
 # Tear down (destroys all AWS resources)
-make destroy TARGET=aws
+task destroy TARGET=aws
 ```
 
 ---
@@ -183,19 +183,19 @@ make destroy TARGET=aws
 ## Implementation Phases
 
 ### Phase 1 — Local Foundation
-1. Makefile skeleton with TARGET switching
+1. Taskfile skeleton with TARGET switching
 2. prerequisites.sh — verify docker, kubectl, helm, kind are installed
 3. Kind cluster creation with config (multi-node: 1 control plane, 2 workers)
 4. ArgoCD installation via manifest + CLI bootstrap
 5. App-of-apps pattern — root Application that manages all platform apps
-6. Verify: `make bootstrap TARGET=local` creates cluster with ArgoCD running
+6. Verify: `task bootstrap TARGET=local` creates cluster with ArgoCD running
 
 ### Phase 2 — Observability Stack
 7. kube-prometheus-stack Helm chart (Prometheus + Grafana)
 8. Custom Grafana dashboards — cluster overview, pod resources, node health
 9. Loki + Promtail for log aggregation
 10. Grafana datasource for Loki (logs queryable alongside metrics)
-11. `make dashboard` opens Grafana with port-forward
+11. `task dashboard` opens Grafana with port-forward
 12. Verify: metrics flowing, logs queryable, dashboards populated
 
 ### Phase 3 — Security Layer
@@ -210,14 +210,14 @@ make destroy TARGET=aws
 19. EKS-specific values overlays for all Helm charts
 20. setup-aws.sh — terraform apply + kubeconfig merge + ArgoCD bootstrap
 21. teardown-aws.sh — ArgoCD cleanup + terraform destroy
-22. Verify: `make bootstrap TARGET=aws` produces identical platform on real infrastructure
+22. Verify: `task bootstrap TARGET=aws` produces identical platform on real infrastructure
 
 ### Phase 5 — Documentation and Polish
 23. Architecture diagram (Mermaid or SVG in docs/)
 24. README with quickstart, screenshots of dashboards
 25. docs/ for each component explaining decisions
 26. Sample app deployment to prove the stack works end-to-end
-27. `make status` with colored output showing health of each component
+27. `task status` with colored output showing health of each component
 
 ---
 
@@ -304,7 +304,7 @@ Include at minimum:
 - **GitOps** — ArgoCD app-of-apps, self-healing, declarative everything
 - **Observability** — full metrics + logging stack, custom dashboards
 - **Security posture** — vulnerability scanning + runtime detection, not just "we'll add security later"
-- **Operational maturity** — Makefile-driven workflow, prerequisite checks, health status, clean teardown
+- **Operational maturity** — Taskfile-driven workflow, prerequisite checks, health status, clean teardown
 - **Documentation** — architecture decisions explained, not just "here's the code"
 
 ---
@@ -313,7 +313,7 @@ Include at minimum:
 
 - Start with Phase 1. Get the local Kind bootstrap working before touching AWS.
 - Use well-known Helm charts — don't reinvent anything. The value is in the integration, not the individual components.
-- Makefile targets should be idempotent — running `make bootstrap` twice shouldn't break anything.
+- Taskfile targets should be idempotent — running `task bootstrap` twice shouldn't break anything.
 - All scripts should check prerequisites before running and fail with clear error messages.
 - Keep Terraform modules small and focused. One module per logical resource group.
 - Test the local path thoroughly before writing any Terraform. The platform/ directory should be identical between local and AWS — only the cluster creation differs.
@@ -329,4 +329,4 @@ Include at minimum:
 - **External DNS + cert-manager** — automatic DNS and TLS (requires a domain)
 - **Backstage** — developer portal / service catalog
 - **Multi-cluster** — bootstrap a second cluster and federate monitoring
-- **CI pipeline** — GitHub Actions that runs `make bootstrap TARGET=local` as integration test
+- **CI pipeline** — GitHub Actions that runs `task bootstrap TARGET=local` as integration test
