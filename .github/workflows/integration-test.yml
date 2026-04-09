@@ -41,6 +41,11 @@ jobs:
           sudo sysctl -w fs.inotify.max_user_instances=512
           sudo sysctl -w fs.inotify.max_user_watches=1048576
 
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@k8s-bootstrap-lab"
+          git config --global user.name "CI"
+
       - name: Bootstrap platform
         run: task bootstrap
 
