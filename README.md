@@ -102,6 +102,9 @@ Ingress (requires `/etc/hosts` entry above):
 ```
 .
 ├── Taskfile.yml              # All automation entry points
+├── .github/workflows/
+│   ├── lint-and-validate.yml # ShellCheck, yamllint, Helm lint, Terraform validate
+│   └── integration-test.yml  # Full Kind bootstrap + verify + teardown
 ├── bootstrap/
 │   ├── bootstrap.sh          # 8-step local bootstrap orchestrator
 │   └── kind-config.yaml      # Kind cluster (1 control-plane + 2 workers)
@@ -257,7 +260,8 @@ VPC (2 public subnets, 2 AZs)
     ├── Loki                — logs to S3 (IRSA)
     ├── Promtail
     ├── Falco               — eBPF runtime detection (AL2 kernel)
-    └── Trivy Operator      — pulls images via ECR (IRSA)
+    ├── Trivy Operator      — pulls images via ECR (IRSA)
+    └── Sample App          — deliberately vulnerable nginx workload
 ```
 
 IRSA (IAM Roles for Service Accounts) is provisioned by Terraform — no static credentials in-cluster.
@@ -276,13 +280,25 @@ task destroy TARGET=aws  # deletes ArgoCD apps → waits for NLB cleanup → ter
 task destroy             # deletes the Kind cluster (all data lost)
 ```
 
+## CI
+
+Two GitHub Actions workflows run on every push and pull request:
+
+| Workflow | What it checks |
+|---|---|
+| **Lint & Validate** | ShellCheck, yamllint, Helm lint + template, Terraform validate + fmt |
+| **Integration Test** | Full Kind bootstrap → ArgoCD sync → pod verification → sample app HTTP 200 → teardown |
+
+The integration test provisions a real cluster in CI and verifies the entire platform comes up healthy in ~5 minutes.
+
 ## Roadmap
 
 - [x] Phase 1 — Local foundation (Kind, ingress-nginx, Gitea, ArgoCD)
 - [x] Phase 2 — Observability (Prometheus, Grafana, Loki, Promtail)
 - [x] Phase 3 — Security (Trivy Operator, Falco + Falcosidekick)
 - [x] Phase 4 — AWS EKS (Terraform: VPC, EKS, IAM/IRSA, EKS-specific overlays)
-- [x] Phase 5 — Sample app, architecture diagrams, portfolio polish
+- [x] Phase 5 — Sample app, architecture diagrams, CI, portfolio polish
   - Sample app (nginx 1.21.6) exercises the full stack — Trivy scans, Promtail logs, Grafana dashboards
   - [Architecture diagrams](docs/architecture.md) for local and AWS topologies (Mermaid)
+  - Full integration test in CI — bootstrap, ArgoCD sync, pod verification, HTTP smoke test
   - Design doc and CLAUDE.md synced with current Taskfile-based workflow
