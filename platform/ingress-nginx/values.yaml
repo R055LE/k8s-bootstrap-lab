@@ -29,6 +29,10 @@ ingress-nginx:
         cpu: 500m
         memory: 256Mi
 
+    # Admission webhooks cause timeouts in Kind/CI — disable for local clusters
+    admissionWebhooks:
+      enabled: false
+
     # Metrics endpoint for Prometheus scraping (wired up in Phase 2)
     metrics:
       enabled: true

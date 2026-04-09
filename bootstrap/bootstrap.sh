@@ -71,10 +71,20 @@ else
   echo "→ Installing ingress-nginx ${INGRESS_NGINX_CHART_VERSION}..."
   kubectl create namespace "${INGRESS_NGINX_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
+  # The umbrella values file nests config under ingress-nginx: (the dependency
+  # key), but the imperative install uses the chart directly. Pass critical
+  # values via --set so they apply correctly during bootstrap.
   helm install ingress-nginx ingress-nginx/ingress-nginx \
     --namespace "${INGRESS_NGINX_NAMESPACE}" \
     --version "${INGRESS_NGINX_CHART_VERSION}" \
-    --values "${REPO_ROOT}/platform/ingress-nginx/values.yaml" \
+    --set controller.service.type=NodePort \
+    --set controller.hostPort.enabled=true \
+    --set controller.nodeSelector."ingress-ready"=true \
+    --set controller.tolerations[0].key="node-role.kubernetes.io/control-plane" \
+    --set controller.tolerations[0].operator=Equal \
+    --set controller.tolerations[0].effect=NoSchedule \
+    --set controller.admissionWebhooks.enabled=false \
+    --set controller.metrics.enabled=true \
     --wait \
     --timeout 8m
   echo "✓ ingress-nginx installed."
@@ -106,10 +116,24 @@ else
     --from-literal=email="admin@gitea.localhost" \
     --dry-run=client -o yaml | kubectl apply -f -
 
+  # The umbrella values file nests config under gitea: — pass critical values
+  # via --set for the direct chart install. ArgoCD re-syncs the full umbrella
+  # values shortly after bootstrap.
   helm install gitea gitea-charts/gitea \
     --namespace "${GITEA_NAMESPACE}" \
     --version "${GITEA_CHART_VERSION}" \
-    --values "${REPO_ROOT}/platform/gitea/values.yaml" \
+    --set gitea.admin.existingSecret=gitea-admin-secret \
+    --set gitea.config.database.DB_TYPE=sqlite3 \
+    --set gitea.config.server.ROOT_URL=http://gitea.localhost \
+    --set gitea.config.server.HTTP_PORT=3000 \
+    --set gitea.config.service.DISABLE_REGISTRATION=true \
+    --set gitea.config.repository.DEFAULT_BRANCH=main \
+    --set postgresql.enabled=false \
+    --set postgresql-ha.enabled=false \
+    --set redis-cluster.enabled=false \
+    --set redis.enabled=false \
+    --set persistence.enabled=true \
+    --set persistence.size=1Gi \
     --wait \
     --timeout 8m
   echo "✓ Gitea installed."
@@ -207,10 +231,12 @@ else
   echo "→ Installing ArgoCD ${ARGOCD_CHART_VERSION}..."
   kubectl create namespace "${ARGOCD_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
+  # The umbrella values file nests config under argo-cd: — pass critical values
+  # via --set for the direct chart install.
   helm install argocd argo/argo-cd \
     --namespace "${ARGOCD_NAMESPACE}" \
     --version "${ARGOCD_CHART_VERSION}" \
-    --values "${REPO_ROOT}/platform/argocd/values.yaml" \
+    --set configs.params."server\.insecure"=true \
     --wait \
     --timeout 8m
   echo "✓ ArgoCD installed."
